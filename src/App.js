@@ -1,5 +1,6 @@
 import React, {Component} from 'react'
 import FileUpload from "./FileUpload";
+import StreamGraph from './StreamGraph';
 
 class App extends Component {
   constructor(props) {
@@ -16,9 +17,11 @@ class App extends Component {
 
   render() {
     return (
-      <div className="App">
-        Hello Guys!
+      <div>
         <FileUpload set_data={this.set_data}></FileUpload>
+        <div>
+          <StreamGraph csv_data={this.state.data}></StreamGraph>
+        </div>
       </div>
     );
   }

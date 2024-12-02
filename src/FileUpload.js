@@ -26,7 +26,12 @@ class FileUpload extends Component {
   };
 
   csvToJson = (csv) => {
-    const lines = csv.split("\n");  // Split by new line to get rows
+    const lines = csv.split(/\r?\n/)
+                   .filter(line => {
+                     const nonEmptyLine = line.replace(/,/g, '').trim();
+                     return nonEmptyLine.length > 0;
+                   });// Split by new line to get rows
+    console.log("Lines:", lines)
     const headers = lines[0].split(","); // Split first row to get headers
     const result = [];
 
