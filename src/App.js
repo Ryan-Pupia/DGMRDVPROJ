@@ -1,7 +1,8 @@
 import React, {Component} from 'react'
 import FileUpload from "./FileUpload";
 import StreamGraph from './StreamGraph';
-import ColumnList from './ColumnList'
+import ColumnList from './ColumnList';
+import SinglePollutants from './SinglePollutants';
 
 class App extends Component {
   constructor(props) {
@@ -23,6 +24,9 @@ class App extends Component {
         <ColumnList csv_data ={this.state.data}></ColumnList>
         <div>
           <StreamGraph csv_data={this.state.data}></StreamGraph>
+        </div>
+        <div>
+          <SinglePollutants csv_data={this.state.data}></SinglePollutants>
         </div>
       </div>
     );
