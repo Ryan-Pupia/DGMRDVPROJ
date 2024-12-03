@@ -1,8 +1,4 @@
 import React, { Component } from 'react';
-import Dropdown from 'react-dropdown';
-import 'react-dropdown/style.css';
-import Slider from 'rc-slider';
-import 'rc-slider/assets/index.css';
 import * as d3 from 'd3';
 
 class SinglePollutants extends Component {
@@ -10,16 +6,17 @@ class SinglePollutants extends Component {
         super(props);
         this.state = {
             selectedPollutant: null,
-            timeRange: [0, 100],  //Initial time range percentage
+            timeRange: [0, 100],  
         };
     }
 
-    handlePollutantChange = (option) => {
-        this.setState({ selectedPollutant: option.value });
+    handlePollutantChange = (event) => {
+        this.setState({ selectedPollutant: event.target.value });
     }
 
-    handleSliderChange = (range) => {
-        this.setState({ timeRange: range });
+    handleSliderChange = (event) => {
+        const value = event.target.value;
+        this.setState({ timeRange: [0, value] });
     }
 
     renderTimeSeries = () => {
@@ -35,13 +32,12 @@ class SinglePollutants extends Component {
             "NOx(GT)": "PT08.S3(NOx)",
             "NO2(GT)": "PT08.S4(NO2)",
             "C6H6(GT)": null,  //No corresponding PT08 column for C6H6
-            "PT08.S5(O3)": "PT08.S5(O3)"  //O3 has only PT08
+            "PT08.S5(O3)": "PT08.S5(O3)"  //03 has only PT08
         };
         const sensorColumn = sensorColumnMap[selectedPollutant];
 
         const data = csv_data.filter(d => d[gtColumn] !== null);
 
-        
         const startDate = new Date(data[0].Date);
         const endDate = new Date(data[data.length - 1].Date);
         const totalTime = endDate - startDate;
@@ -52,7 +48,6 @@ class SinglePollutants extends Component {
             return percentPassed >= timeRange[0] && percentPassed <= timeRange[1];
         });
 
-        
         const xScale = d3.scaleTime()
             .domain([new Date(filteredData[0].Date), new Date(filteredData[filteredData.length - 1].Date)])
             .range([0, 800]); 
@@ -60,7 +55,6 @@ class SinglePollutants extends Component {
             .domain([0, d3.max(filteredData, d => Math.max(d[gtColumn], sensorColumn ? d[sensorColumn] : 0))])
             .range([400, 0]); 
 
-        
         d3.select(".timeSeries").selectAll("*").remove();
 
         const svg = d3.select(".timeSeries")
@@ -143,19 +137,25 @@ class SinglePollutants extends Component {
 
     render() {
         const options = [
-            "CO(GT)", "NMHC(GT)", "NOx(GT)", "NO2(GT)", "C6H6(GT)", "PT08.S5(O3)" 
+            "CO(GT)", "NMHC(GT)", "NOx(GT)", "NO2(GT)", "C6H6(GT)", "PT08.S5(O3)"  
         ];
 
         return (
             <div>
-                <Dropdown
-                    options={options}
-                    onChange={this.handlePollutantChange}
-                    placeholder="Select a pollutant"
-                />
-                <Slider
-                    range
-                    defaultValue={[0, 100]}
+                <label>Select Pollutant:</label>
+                <select onChange={this.handlePollutantChange} defaultValue="">
+                    <option value="" disabled>Select a pollutant</option>
+                    {options.map(option => (
+                        <option key={option} value={option}>{option}</option>
+                    ))}
+                </select>
+                <br />
+                <label>Time Range:</label>
+                <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={this.state.timeRange[1]}
                     onChange={this.handleSliderChange}
                 />
                 <svg className="timeSeries"></svg>
