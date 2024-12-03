@@ -8,14 +8,16 @@ import SinglePollutants from "./SinglePollutants";
 import "./DropdownSP.css";
 
 class App extends Component {
-  constructor(props){
+  constructor(props) {
     super(props);
-    this.state ={
+    this.state = {
       data: [],
       choicePollutant: "",
       pollutant: [],
+      timeRange: [0, 100],
     };
   }
+
 
   set_data = (csv_data)=>{
     const pollutant = Object.keys(csv_data[0]).filter(
@@ -36,8 +38,13 @@ class App extends Component {
     this.setState({ choicePollutant: pollutant });
   };
 
+  handleSliderChange = (event) => {
+    const value = event.target.value;
+    this.setState({ timeRange: [0, value] });
+  }
+
   render(){
-    const{ data, choicePollutant, pollutant } = this.state;
+    const{ data, choicePollutant, pollutant, timeRange } = this.state;
 
     return(
       <div className="App">
@@ -54,6 +61,17 @@ class App extends Component {
           </div>
         )}
 
+        <label>Time Range:</label>
+        <input 
+          type="range" 
+          min="0" 
+          max="100" 
+          value={timeRange[1]} 
+          onChange={this.handleSliderChange} 
+        />
+
+
+
         {/* Column List */}
         <div className="column-list-container">
           <ColumnList csv_data={data} />
@@ -65,9 +83,17 @@ class App extends Component {
         </div>
 
         {/* Single Pollutants Visualization */}
-        <div className="single-pollutants-container">
-          <SinglePollutants csv_data={data} />
+        <div>
+          {choicePollutant && (
+            <SinglePollutants 
+              csv_data={data} 
+              columns={pollutant} 
+              choicePollutant={choicePollutant} 
+              timeRange={timeRange}
+            />
+          )}
         </div>
+
 
         {/* Scatter Plots */}
         {choicePollutant && (
@@ -84,3 +110,4 @@ class App extends Component {
 }
 
 export default App;
+
