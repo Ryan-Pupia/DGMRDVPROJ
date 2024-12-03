@@ -10,7 +10,7 @@ class SinglePollutants extends Component {
         super(props);
         this.state = {
             selectedPollutant: null,
-            timeRange: [0, 100],  // Initial time range percentage
+            timeRange: [0, 100],  //Initial time range percentage
         };
     }
 
@@ -34,14 +34,14 @@ class SinglePollutants extends Component {
             "NMHC(GT)": "PT08.S2(NMHC)",
             "NOx(GT)": "PT08.S3(NOx)",
             "NO2(GT)": "PT08.S4(NO2)",
-            "C6H6(GT)": null,  // No corresponding PT08 column for C6H6
-            "PT08.S5(O3)": "PT08.S5(O3)"  // Ozone has only PT08
+            "C6H6(GT)": null,  //No corresponding PT08 column for C6H6
+            "PT08.S5(O3)": "PT08.S5(O3)"  //O3 has only PT08
         };
         const sensorColumn = sensorColumnMap[selectedPollutant];
 
         const data = csv_data.filter(d => d[gtColumn] !== null);
 
-        // Filter data based on time range
+        
         const startDate = new Date(data[0].Date);
         const endDate = new Date(data[data.length - 1].Date);
         const totalTime = endDate - startDate;
@@ -52,34 +52,30 @@ class SinglePollutants extends Component {
             return percentPassed >= timeRange[0] && percentPassed <= timeRange[1];
         });
 
-        // Set up D3 scales
+        
         const xScale = d3.scaleTime()
             .domain([new Date(filteredData[0].Date), new Date(filteredData[filteredData.length - 1].Date)])
-            .range([0, 800]); // Width of the graph
+            .range([0, 800]); 
         const yScale = d3.scaleLinear()
             .domain([0, d3.max(filteredData, d => Math.max(d[gtColumn], sensorColumn ? d[sensorColumn] : 0))])
-            .range([400, 0]); // Height of the graph
+            .range([400, 0]); 
 
-        // Clear previous SVG elements
+        
         d3.select(".timeSeries").selectAll("*").remove();
 
-        // Append new SVG elements
         const svg = d3.select(".timeSeries")
             .attr("width", 900)
             .attr("height", 450)
             .append("g")
             .attr("transform", "translate(50, 20)");
 
-        // Add X Axis
         svg.append("g")
             .attr("transform", "translate(0, 400)")
             .call(d3.axisBottom(xScale));
 
-        // Add Y Axis
         svg.append("g")
             .call(d3.axisLeft(yScale));
 
-        // Add GT line
         svg.append("path")
             .datum(filteredData)
             .attr("fill", "none")
@@ -90,7 +86,6 @@ class SinglePollutants extends Component {
                 .y(d => yScale(d[gtColumn]))
             );
 
-        // Add Sensor line if applicable
         if (sensorColumn) {
             svg.append("path")
                 .datum(filteredData)
@@ -103,7 +98,7 @@ class SinglePollutants extends Component {
                 );
         }
 
-        // Add legend
+        //Legend
         const legend = svg.append("g")
             .attr("class", "legend")
             .attr("transform", "translate(50,10)");
@@ -148,7 +143,7 @@ class SinglePollutants extends Component {
 
     render() {
         const options = [
-            "CO(GT)", "NMHC(GT)", "NOx(GT)", "NO2(GT)", "C6H6(GT)", "PT08.S5(O3)"  // Include all relevant pollutants
+            "CO(GT)", "NMHC(GT)", "NOx(GT)", "NO2(GT)", "C6H6(GT)", "PT08.S5(O3)" 
         ];
 
         return (
