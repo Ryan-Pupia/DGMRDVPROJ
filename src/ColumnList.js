@@ -2,7 +2,7 @@ import React, { Component } from "react";
 import "./ColumnList.css"
 import * as d3 from "d3";
 
-class StreamGraph extends Component {
+class ColumnList extends Component {
     componentDidUpdate() {
         this.renderColumnList();
     }
@@ -96,4 +96,4 @@ class StreamGraph extends Component {
     }
 }
 
-export default StreamGraph;
+export default ColumnList;
