@@ -37,7 +37,7 @@ class StreamGraph extends Component {
       // create x and y scales
       const xScale = d3.scaleTime().domain(d3.extent(data, d => d.Date)).range([0, innerWidth]);
       const yScale = d3.scaleLinear().domain([minSum - 8000, maxSum]).range([innerHeight, 0]);
-      console.log("MinSum:", minSum)
+      // console.log("MinSum:", minSum)
       
       // create area generation
       const areaGenerator = d3.area()
@@ -76,7 +76,6 @@ class StreamGraph extends Component {
             .style("font-size", "12px")
             .attr("alignment-baseline", "middle");
       });
-
     }
   
     render() {
