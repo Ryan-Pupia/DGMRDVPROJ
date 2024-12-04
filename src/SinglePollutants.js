@@ -1,112 +1,128 @@
-import React, { Component } from 'react';
+import React, { Component } from "react";
 import * as d3 from 'd3';
 
 class SinglePollutants extends Component {
-    componentDidUpdate(prevProps) {
-        if (prevProps.csv_data !== this.props.csv_data || prevProps.choicePollutant !== this.props.choicePollutant || prevProps.timeRange !== this.props.timeRange) {
-            this.renderTimeSeries();
+    // Calls the pollutantGraph when any of the props is changed:
+    componentDidUpdate(previousProps) {
+        if (previousProps.csv_data !== this.props.csv_data || 
+            previousProps.choicePollutant !== this.props.choicePollutant || 
+            previousProps.timeRange !== this.props.timeRange) {
+            this.pollutantGraph();
         }
     }
 
-    renderTimeSeries = () => {
+    // Choosing the relevant columns: If a pollutant has both GT and PT08 features, the graph will plot both features for the pollutant:
+    pollutantGraph = () => {
         const { csv_data, choicePollutant, timeRange } = this.props;
 
-        if (!choicePollutant) return;
+        // In case of an irrelevant pollutant:
+        if (!choicePollutant) {
+            return;
+        }
 
-        const sensorColumnMap = {
+        const columnMapping = { 
             "CO(GT)": "PT08.S1(CO)",
-            "NMHC(GT)": "PT08.S2(NMHC)",
-            "NOx(GT)": "PT08.S3(NOx)",
-            "NO2(GT)": "PT08.S4(NO2)",
-            "C6H6(GT)": null,  // No corresponding PT08 column for C6H6
-            "PT08.S5(O3)": "PT08.S5(O3)"  // Ozone has only PT08
+            "NMHC(GT)": "PT08.S2(NMHC)", 
+            "NOx(GT)": "PT08.S3(NOx)", 
+            "NO2(GT)": "PT08.S4(NO2)", 
+            "C6H6(GT)": null, // C6H6 has no PT08 column
+            "PT08.S5(O3)": "PT08.S5(O3)" // O3 has no GT column
         };
-        const gtColumn = choicePollutant.includes("PT08") ? null : choicePollutant;
-        const sensorColumn = sensorColumnMap[choicePollutant] || (choicePollutant.includes("PT08") ? choicePollutant : null);
 
-        // Determine the correct column to filter data on
-        const dataColumn = gtColumn || sensorColumn;
-        const data = csv_data.filter(d => d[dataColumn] !== null);
+        // To check if the column is a PT08 column or GT Column:
+        let baseColumn = null; 
+        let sensorColumn = null; 
+        if (choicePollutant.includes("PT08")) {
+            baseColumn = null; 
+            sensorColumn = choicePollutant; 
+        } else{ 
+            baseColumn = choicePollutant; 
+            sensorColumn = columnMapping[choicePollutant]; 
+        }
 
-        // Filter data based on time range
-        const startDate = new Date(data[0].Date);
-        const endDate = new Date(data[data.length - 1].Date);
-        const totalTime = endDate - startDate;
-        const filteredData = data.filter(d => {
-            const date = new Date(d.Date);
-            const timePassed = date - startDate;
-            const percentPassed = (timePassed / totalTime) * 100;
-            return percentPassed >= timeRange[0] && percentPassed <= timeRange[1];
+        const filteredData = csv_data.filter(entry => entry[baseColumn] !== null || entry[sensorColumn] !== null);
+
+        // Time range selection:
+        const startDate = new Date(filteredData[0].Date);
+        const endDate = new Date(filteredData[filteredData.length - 1].Date);
+        const totalDuration = endDate - startDate;
+
+        // Filtering data based on selected time range:
+        const narrowedData = filteredData.filter(entry => {
+            const entryDate = new Date(entry.Date);
+            const timeElapsed = entryDate - startDate;
+            const percentElapsed = (timeElapsed / totalDuration) * 100;
+            return percentElapsed >= timeRange[0] && percentElapsed <= timeRange[1];
         });
 
-        // Set up D3 scales
+        // D3 scales:
         const xScale = d3.scaleTime()
-            .domain([new Date(filteredData[0].Date), new Date(filteredData[filteredData.length - 1].Date)])
-            .range([0, 800]); // Width of the graph
+            .domain([new Date(narrowedData[0].Date), new Date(narrowedData[narrowedData.length - 1].Date)])
+            .range([0, 850]);
+
         const yScale = d3.scaleLinear()
-            .domain([0, d3.max(filteredData, d => Math.max(d[gtColumn] || 0, sensorColumn ? d[sensorColumn] : 0))])
-            .range([400, 0]); // Height of the graph
+            .domain([
+                0,
+                d3.max(narrowedData, d => Math.max(d[baseColumn] || 0, sensorColumn ? d[sensorColumn] : 0))
+            ])
+            .range([400, 0]);
 
-        // Clear previous SVG elements
-        d3.select(".timeSeries").selectAll("*").remove();
+        // Clearing any previous SVG elements:
+        d3.select(".pollutantGraph").selectAll("*").remove();
 
-        // Append new SVG elements
-        const svg = d3.select(".timeSeries")
-            .attr("width", 900)
-            .attr("height", 450)
+        const svgElement = d3.select(".pollutantGraph")
+            .attr("width", 950)
+            .attr("height", 500)
             .append("g")
-            .attr("transform", "translate(50, 20)");
+            .attr("transform", "translate(60, 20)");
 
-        // Add X Axis
-        svg.append("g")
+        // Scales:
+        svgElement.append("g")
             .attr("transform", "translate(0, 400)")
             .call(d3.axisBottom(xScale));
 
-        // Add Y Axis
-        svg.append("g")
+        svgElement.append("g")
             .call(d3.axisLeft(yScale));
 
-        // Add GT line if applicable
-        if (gtColumn) {
-            svg.append("path")
-                .datum(filteredData)
+        if (baseColumn) {
+            svgElement.append("path")
+                .datum(narrowedData)
                 .attr("fill", "none")
-                .attr("stroke", "blue")
-                .attr("stroke-width", 1.5)
+                .attr("stroke", "blue") 
+                .attr("stroke-width", 2)
                 .attr("d", d3.line()
-                    .x(d => xScale(new Date(d.Date)))
-                    .y(d => yScale(d[gtColumn]))
+                    .x(entry => xScale(new Date(entry.Date)))
+                    .y(entry => yScale(entry[baseColumn]))
                 );
         }
-
-        // Add Sensor line if applicable
+            
         if (sensorColumn) {
-            svg.append("path")
-                .datum(filteredData)
+            svgElement.append("path")
+                .datum(narrowedData)
                 .attr("fill", "none")
-                .attr("stroke", "red")
-                .attr("stroke-width", 1.5)
+                .attr("stroke", "red") 
+                .attr("stroke-width", 2)
                 .attr("d", d3.line()
-                    .x(d => xScale(new Date(d.Date)))
-                    .y(d => yScale(d[sensorColumn]))
+                    .x(entry => xScale(new Date(entry.Date)))
+                    .y(entry => yScale(entry[sensorColumn]))
                 );
         }
 
-        // Add legend
-        const legend = svg.append("g")
+        // LEGEND:
+        const legend = svgElement.append("g")
             .attr("class", "legend")
-            .attr("transform", "translate(50,10)");
+            .attr("transform", "translate(60,20)");
 
-        if (gtColumn) {
+        if (baseColumn) {
             legend.append("rect")
-                .attr("x", 750)
+                .attr("x", 770)
                 .attr("y", 0)
                 .attr("width", 10)
                 .attr("height", 10)
                 .style("fill", "blue");
 
             legend.append("text")
-                .attr("x", 770)
+                .attr("x", 790)
                 .attr("y", 10)
                 .attr("dy", "-0.25em")
                 .style("text-anchor", "start")
@@ -115,25 +131,25 @@ class SinglePollutants extends Component {
 
         if (sensorColumn) {
             legend.append("rect")
-                .attr("x", 750)
-                .attr("y", gtColumn ? 20 : 0)
+                .attr("x", 770)
+                .attr("y", baseColumn ? 20 : 0)
                 .attr("width", 10)
                 .attr("height", 10)
-                .style("fill", "red");
+                .style("fill", "red"); 
 
             legend.append("text")
-                .attr("x", 770)
-                .attr("y", gtColumn ? 30 : 10)
+                .attr("x", 790)
+                .attr("y", baseColumn ? 30 : 10)
                 .attr("dy", "-0.25em")
                 .style("text-anchor", "start")
-                .text("Sensor");
+                .text("Sens");
         }
     }
 
     render() {
         return (
             <div>
-                <svg className="timeSeries"></svg>
+                <svg className="pollutantGraph"></svg>
             </div>
         );
     }

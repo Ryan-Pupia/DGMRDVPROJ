@@ -120,7 +120,7 @@ class App extends Component {
         <div>
           {choicePollutant && (
             <SinglePollutants 
-              csv_data={originalData} 
+              csv_data={filteredData} 
               columns={pollutants} 
               choicePollutant={choicePollutant} 
               timeRange={timeRange}
@@ -144,4 +144,3 @@ class App extends Component {
 }
 
 export default App;
-
